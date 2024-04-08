@@ -14,7 +14,7 @@ amqp.connect('amqp://localhost', function(error0, connection) {
         var msg = process.argv.slice(2).join(' ') || "Hello World!";
 
         channel.assertQueue(queue, {
-            durable: true
+            durable: true //task_queue queue won't be lost even if RabbitMQ restarts
         });
         channel.sendToQueue(queue, Buffer.from(msg), {
             persistent: true

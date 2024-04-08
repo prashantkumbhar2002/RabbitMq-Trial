@@ -26,7 +26,7 @@ amqp.connect('amqp://localhost', function (error, connection) {
 
         // This makes sure the queue is declared before attempting to consume from it
         channel.assertQueue(queue, {
-            durable: true
+            durable: true   //task_queue queue won't be lost even if RabbitMQ restarts
         });
 
         channel.consume(queue, function (msg) {
