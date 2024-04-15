@@ -1,9 +1,20 @@
 // const express = require('express')
 import express from "express";
-import axios from "axios"
+import axios from "axios";
+import redis from "redis";
+
 const app = express();
 
 const PORT = process.env.PORT || 3005;
+
+let redisClient;
+(async ()=>{
+  redisClient = redis.createClient();
+  redisClient.on("error", (error)=> {
+    console.log(`Error : ${error}`)
+  })
+  await redisClient.connect();
+})();
 
 async function getApiData(species) {
     const apiRes = await axios.get(`https://www.fishwatch.gov/api/species/${species}`);
