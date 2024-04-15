@@ -25,23 +25,15 @@ async function getApiData(species) {
 
 async function getSpeciesData(req, res) {
     const { species } = req.params;
-    let results, isCached = false;
+    let results;
     try {
-        const cachedRes = await redisClient.get(species);
-        if(cachedRes){
-            isCached = true;
-            results = JSON.parse(cachedRes)
+        results = await getApiData(species);
+        if (results.length === 0) {
+            throw "API returned an empty array";
         }
-        else{
-            results = await getApiData(species);
-            if (results.length === 0) {
-                throw "API returned an empty array";
-            }
-            await redisClient.set(species, JSON.stringify(results), { EX: 180, NX: true});
-        }
-        
+        await redisClient.set(species, JSON.stringify(results), { EX: 180, NX: true});
         res.send({
-            fromCache: isCached,
+            fromCache: false,
             data: results,
         });
     } catch (error) {
@@ -50,7 +42,28 @@ async function getSpeciesData(req, res) {
     }
 }
 
-app.get("/fish/:species", getSpeciesData);
+
+async function cacheData(req, res, next){
+    const {species} = req.params;
+    let results;
+    try {
+      const cacheRes = await redisClient.get(species);
+      if(cacheRes){
+        results = JSON.parse(cacheRes)
+        res.send({
+          fromCache: true,
+          data: results
+        })
+      } else{
+        next();
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(404);
+    }
+  }
+
+app.get("/fish/:species", cacheData, getSpeciesData);
 app.listen(PORT, () => {
     console.log(`⚙️ Server is running at port : ${PORT}`)
 })
