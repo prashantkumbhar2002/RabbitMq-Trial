@@ -25,14 +25,23 @@ async function getApiData(species) {
 
 async function getSpeciesData(req, res) {
     const { species } = req.params;
-    let results;
+    let results, isCached = false;
     try {
-        results = await getApiData(species);
-        if (results.length === 0) {
-            throw "API returned an empty array";
+        const cachedRes = await redisClient.get(species);
+        if(cachedRes){
+            isCached = true;
+            results = JSON.parse(cachedRes)
         }
+        else{
+            results = await getApiData(species);
+            if (results.length === 0) {
+                throw "API returned an empty array";
+            }
+            await redisClient.set(species, JSON.stringify(results));
+        }
+        
         res.send({
-            fromCache: false,
+            fromCache: isCached,
             data: results,
         });
     } catch (error) {
